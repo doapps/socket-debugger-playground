@@ -6,185 +6,187 @@
     <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.4.5/socket.io.min.js"></script>
     <script>
-      $(document).ready(function() {
-        /////////////
-        // UI Data //
-        /////////////
-      
-        var KEY_SNIPPETS_STORAGE = 'socket_debugger_snippets';
-        var jsonDataObj = getInitialState();
-      
-        function getInitialState() {
-          return {
-            emitKey: '',
-            data: {}
-          };
+    $(document).ready(function() {
+      /////////////
+      // UI Data //
+      /////////////
+
+      var KEY_SNIPPETS_STORAGE = 'socket_debugger_snippets';
+      var jsonDataObj = getInitialState();
+
+      function getInitialState() {
+        return {
+          emitKey: '',
+          data: {}
+        };
+      }
+
+      function toBeautyJSON(obj) {
+        return JSON.stringify(obj, null, 2)
+      }
+
+      function updateJsonData() {
+        $('#emitKey').val(jsonDataObj.emitKey);
+        $('#jsonData').val(toBeautyJSON(jsonDataObj.data));
+        $('#jsonData').height($('#jsonData')[0].scrollHeight - 20);
+      }
+
+      function getSnippetsFromLocalStorage() {
+        var snippetsRaw = window.localStorage.getItem(KEY_SNIPPETS_STORAGE);
+        var snippetsObj = [];
+
+        if (snippetsRaw) {
+          snippetsObj = JSON.parse(snippetsRaw);
         }
-      
-        function toBeautyJSON( obj ) {
-          return JSON.stringify(obj, null, 2)
-        }
-      
-        function updateJsonData() {
-          $('#emitKey').val(jsonDataObj.emitKey);
-          $('#jsonData').val( toBeautyJSON( jsonDataObj.data ) );
-          $('#jsonData').height( $('#jsonData')[0].scrollHeight - 20 );
-        }
-      
-        function getSnippetsFromLocalStorage() {
-          var snippetsRaw = window.localStorage.getItem(KEY_SNIPPETS_STORAGE);
-          var snippetsObj = [];
-      
-          if ( snippetsRaw ) {
-            snippetsObj = JSON.parse( snippetsRaw );
-          }
-      
-          return snippetsObj;
-        }
-      
-        function updateSocketSnippets() {
-          var snippets = getSnippetsFromLocalStorage();
-          var buttonsSnippets = '';
-      
-          snippets.forEach(function(snippet, index) {
-            buttonsSnippets += '<span data-index="' + index + '" ' +
-                                     'data-emitKey="' + snippet.emitKey + '" ' +
-                                     "data-data='" + JSON.stringify( snippet.data ) +
-                                     "' class='tag is-warning' style='margin: 0 5px 5px 0;cursor:pointer' >" +
-                                  snippet.name +
-                                  '<button class="delete"></button>'+
-                               '</span>';
-          });
-      
-          $('#loadSnippets').html(buttonsSnippets);
-        }
-      
-        function persistOnLocalStorage(data) {
-          window.localStorage.setItem(KEY_SNIPPETS_STORAGE, data);
-        }
-      
-        function addSnippet(snippetName, emitKey, data) {
-          var snippets = getSnippetsFromLocalStorage();
-          var newSnippet = {
-            name: snippetName,
-            emitKey: emitKey,
-            data: data
-          };
-      
-          snippets.push( newSnippet );
-          persistOnLocalStorage(JSON.stringify( snippets ));
-        }
-      
-        function removeSnippet( indexToRemove ) {
-          var snippets = getSnippetsFromLocalStorage();
-          var newSnippets = [];
-      
-          snippets = snippets.filter(function(snippet, index) {
-            return index !== indexToRemove
-          });
-      
-          persistOnLocalStorage(JSON.stringify(snippets));
-        }
-      
-        $('#emitKey').change(function() {
-          jsonDataObj.emitKey = $(this).val();
-        });
-      
-        $('#jsonData').change(function() {
-          var textAreaData = $(this).val();
-          jsonDataObj.data = JSON.parse( textAreaData );
-        });
-      
-        $('#loadSnippets').click(function(event) {
-          if ( event.target.nodeName === 'SPAN' ) { // snippet button
-            var selectedSnippet = $(event.target);
-            var emitKey = $(selectedSnippet).data('emitkey');
-            var data = $(selectedSnippet).data('data');
-      
-            jsonDataObj.emitKey = emitKey;
-            jsonDataObj.data = data;
-            updateSocketSnippets();
-            updateJsonData();
-          } else if ( event.target.nodeName === 'BUTTON' ) { // delete button
-            var selectedSnippet = $(event.target).closest( 'span' );
-            var index = $(selectedSnippet).data('index');
-            removeSnippet(index);
-            updateJsonData();
-            updateSocketSnippets();
-          }
-        });
-      
-        $('#buttonClear').click(function() {
-          jsonDataObj = getInitialState();
-          updateJsonData();
+
+        return snippetsObj;
+      }
+
+      function updateSocketSnippets() {
+        var snippets = getSnippetsFromLocalStorage();
+        var buttonsSnippets = '';
+
+        snippets.forEach(function(snippet, index) {
+          buttonsSnippets += '<span data-index="' + index + '" ' +
+            'data-emitKey="' + snippet.emitKey + '" ' +
+            "data-data='" + JSON.stringify(snippet.data) +
+            "' class='tag is-warning' style='margin: 0 5px 5px 0;cursor:pointer' >" +
+            snippet.name +
+            '<button class="delete"></button>' +
+            '</span>';
         });
 
-        $('#formKeyValue').submit(function() {
-          var prop = $('#keyProp').val().trim();
-          var value = $('#valueProp').val().trim();
-      
-          if ( !isNaN(Number(value)) ) {
-            value = Number(value);
-          }
-      
-          if ( value === 'true' || value === 'false' ) {
-            value = !!value;
-          }
-      
-          jsonDataObj.data[ prop ] = value;
-          updateJsonData();
-      
-          $('#keyProp').val('');
-          $('#valueProp').val('');
-          $('#keyProp').focus();
-      
-          return false;
+        $('#loadSnippets').html(buttonsSnippets);
+      }
+
+      function persistOnLocalStorage(data) {
+        window.localStorage.setItem(KEY_SNIPPETS_STORAGE, data);
+      }
+
+      function addSnippet(snippetName, emitKey, data) {
+        var snippets = getSnippetsFromLocalStorage();
+        var newSnippet = {
+          name: snippetName,
+          emitKey: emitKey,
+          data: data
+        };
+
+        snippets.push(newSnippet);
+        persistOnLocalStorage(JSON.stringify(snippets));
+      }
+
+      function removeSnippet(indexToRemove) {
+        var snippets = getSnippetsFromLocalStorage();
+        var newSnippets = [];
+
+        snippets = snippets.filter(function(snippet, index) {
+          return index !== indexToRemove
         });
-      
-        $('#formSaveSnippet').submit(function() {
-          var snippetName = $('#snippetName').val().trim();
-          addSnippet(snippetName, jsonDataObj.emitKey, jsonDataObj.data);
+
+        persistOnLocalStorage(JSON.stringify(snippets));
+      }
+
+      $('#emitKey').change(function() {
+        jsonDataObj.emitKey = $(this).val();
+      });
+
+      $('#jsonData').change(function() {
+        var textAreaData = $(this).val();
+        jsonDataObj.data = JSON.parse(textAreaData);
+      });
+
+      $('#loadSnippets').click(function(event) {
+        if (event.target.nodeName === 'SPAN') { // snippet button
+          var selectedSnippet = $(event.target);
+          var emitKey = $(selectedSnippet).data('emitkey');
+          var data = $(selectedSnippet).data('data');
+
+          jsonDataObj.emitKey = emitKey;
+          jsonDataObj.data = data;
           updateSocketSnippets();
-          $('#snippetName').val('');
-          return false;
-        });
-      
-        updateJsonData();
-        updateSocketSnippets();
-      
-        ////////////////////////
-        // All socket-related //
-        ////////////////////////
-        var socket = null;
-      
-        $('#buttonConnect').click(function() {
-          var ip = $('#connectionIp').val().trim();
-          var port = $('#connectionPort').val().trim();
-          socket = new io( ip + ':' + port );
-
-          activateAllSocketHandlers( socket );
-          $('#buttonConnect').addClass('is-disabled');
-          $('#urlConnection').addClass('is-disabled');
-          $('#urlConnection').attr('disabled',true);
-        });
-
-        $('#buttonSend').click(function() {
-          var emitKey = $('#emitKey').val();
-          socket.emit(emitKey, jsonDataObj.data );
-        });
-      
-        function activateAllSocketHandlers( socket ) {
-          socket.on('connect', function() {
-            console.log('id:', socket.io.engine.id);
-            $('#buttonSend').removeClass('is-disabled');
-          });
-      
-          socket.on("debug", function (data) {
-            $("#response").html("");
-            $("#response").append(toBeautyJSON(data));
-          });
+          updateJsonData();
+        } else if (event.target.nodeName === 'BUTTON') { // delete button
+          var selectedSnippet = $(event.target).closest('span');
+          var index = $(selectedSnippet).data('index');
+          removeSnippet(index);
+          updateJsonData();
+          updateSocketSnippets();
         }
       });
+
+      $('#buttonClear').click(function() {
+        jsonDataObj = getInitialState();
+        updateJsonData();
+      });
+
+      $('#formKeyValue').submit(function() {
+        var prop = $('#keyProp').val().trim();
+        var value = $('#valueProp').val().trim();
+
+        if (!isNaN(Number(value))) {
+          value = Number(value);
+        }
+
+        if (value === 'true' || value === 'false') {
+          value = !!value;
+        }
+
+        jsonDataObj.data[prop] = value;
+        updateJsonData();
+
+        $('#keyProp').val('');
+        $('#valueProp').val('');
+        $('#keyProp').focus();
+
+        return false;
+      });
+
+      $('#formSaveSnippet').submit(function() {
+        var snippetName = $('#snippetName').val().trim();
+        addSnippet(snippetName, jsonDataObj.emitKey, jsonDataObj.data);
+        updateSocketSnippets();
+        $('#snippetName').val('');
+        return false;
+      });
+
+      updateJsonData();
+      updateSocketSnippets();
+
+      ////////////////////////
+      // All socket-related //
+      ////////////////////////
+      var socket = null;
+
+      $('#buttonConnect').click(function() {
+        var ip = $('#connectionIp').val().trim();
+        var port = $('#connectionPort').val().trim();
+        socket = new io(ip + ':' + port);
+
+        activateAllSocketHandlers(socket);
+        $('#buttonConnect').addClass('is-disabled');
+        $('#connectionIp').addClass('is-disabled');
+        $('#connectionIp').attr('disabled', true);
+        $('#connectionPort').addClass('is-disabled');
+        $('#connectionPort').attr('disabled', true);
+      });
+
+      $('#buttonSend').click(function() {
+        var emitKey = $('#emitKey').val();
+        socket.emit(emitKey, jsonDataObj.data);
+      });
+
+      function activateAllSocketHandlers(socket) {
+        socket.on('connect', function() {
+          console.log('id:', socket.io.engine.id);
+          $('#buttonSend').removeClass('is-disabled');
+        });
+
+        socket.on("debug", function(data) {
+          $("#response").html("");
+          $("#response").append(toBeautyJSON(data));
+        });
+      }
+    });
     </script>
   </head>
   <body>
