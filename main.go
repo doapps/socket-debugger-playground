@@ -18,6 +18,6 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	http.HandleFunc("/", indexHandler)
 
-	fmt.Println("Running at 8080")
-	http.ListenAndServe(":8080", nil)
+	fmt.Println("Running at 4000")
+	http.ListenAndServe(":4000", nil)
 }
