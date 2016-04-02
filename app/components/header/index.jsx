@@ -1,7 +1,23 @@
 import React from 'react';
+import LinkedStateMixin from 'react-addons-linked-state-mixin';
+
+const debug = require( 'debug' )( 'app:components:header' );
 
 const Header = React.createClass( {
   displayName: 'Header',
+
+  mixins: [ LinkedStateMixin ],
+
+  getInitialState() {
+    return {
+      connectionIp: 'http://localhost',
+      connectionPort: '3000'
+    }
+  },
+
+  connect() {
+    debug( 'this.state', this.state );
+  },
 
   render() {
     return (
@@ -16,9 +32,9 @@ const Header = React.createClass( {
               </div>
               <div className="header-menu header-right">
                 <div className="header-item">
-                  <input id="connectionIp" type="text" placeholder="ip" value="http://localhost" className="input" />&nbsp;
-                  <input id="connectionPort" type="text" placeholder="port" value="3000" className="input" />&nbsp;
-                  <button id="buttonConnect" className="button is-success">Connect</button>
+                  <input type="text" valueLink={ this.linkState( 'connectionIp' ) } placeholder="ip" className="input" />&nbsp;
+                  <input type="text" valueLink={ this.linkState( 'connectionPort' ) } placeholder="port" className="input" />&nbsp;
+                  <button onClick={ this.connect } className="button is-success">Connect</button>
                 </div>
               </div>
             </div>
