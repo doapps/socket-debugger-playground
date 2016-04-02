@@ -1,5 +1,6 @@
 import React from 'react';
 import LinkedStateMixin from 'react-addons-linked-state-mixin';
+import io from 'socket.io-client';
 
 const debug = require( 'debug' )( 'app:components:header' );
 
@@ -17,6 +18,12 @@ const Header = React.createClass( {
 
   connect() {
     debug( 'this.state', this.state );
+    const { connectionIp, connectionPort } = this.state;
+    const socket = new io( `${ connectionIp }:${ connectionPort }` );
+
+    socket.on('connect', () => {
+      debug( 'id: ', socket.io.engine.id );
+    }) ;
   },
 
   render() {
